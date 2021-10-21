@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button</title>
+</head>
+
+<body>
+    <div>
+        <h2>Loading animation</h2>
+        <svg class="svg__loading" width="250" height="150">
+            <circle class="svg__circle" cx="60" cy="75" r="50" stroke="green" stroke-width="15" fill="transparent" />
+            <circle class="svg__circle svg__circle--delay" cx="160" cy="75" r="50" stroke="green" stroke-width="15"
+                fill="transparent" />
+        </svg>
+    </div>
+    <div>
+        <h2>Simulation</h2>
+        <p>You can drag the circle</p>
+        <svg class="svg__physics" width="1000" height="500">
+            <circle id="circle" class="circle" cx="160" cy="75" r="50" fill="red" />
+        </svg>
+    </div>
+    <style name="cube">
+        .svg__physics {
+            background: blue;
+        }
+    </style>
+    <style name="circles">
+        .svg__loading {
+            --circleLenght: 314;
+            --animationDuration: 5s;
+        }
+
+
+        .svg__circle {
+            stroke-dasharray: calc(var(--circleLenght) / 2);
+            stroke-dashoffset: var(--circleLenght);
+            animation: strokeAnimation var(--animationDuration) linear forwards;
+            animation-iteration-count: infinite;
+            stroke: red;
+        }
+
+        /*         .svg__circle--mask {
+            stroke-dasharray: calc(var(--circleLenght) / 2);
+            stroke-dashoffset: var(--circleLenght);
+            animation: strokeAnimation var(--animationDuration) linear forwards;
+            animation-iteration-count: infinite;
+        } */
+
+        .svg__circle--delay {
+            stroke-dasharray: 0 314;
+            stroke-dashoffset: var(--circleLenght);
+            animation: strokeAnimationDelayed var(--animationDuration) linear forwards;
+            animation-delay: calc(var(--animationDuration) / 2);
+            animation-iteration-count: infinite;
+        }
+
+        @keyframes strokeAnimation {
+            0% {
+                stroke-dashoffset: 314;
+                stroke: red;
+            }
+
+            25% {
+                stroke-dashoffset: 157;
+                stroke-dasharray: 157 157;
+                stroke: green;
+            }
+
+            50% {
+                stroke-dashoffset: 0;
+                stroke-dasharray: 0 314;
+                stroke: blue;
+            }
+
+            75% {
+                stroke-dashoffset: 0;
+                stroke-dasharray: 0 314;
+                stroke: yellow;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+                stroke-dasharray: 157 157;
+                stroke: red;
+            }
+        }
+
+        @keyframes strokeAnimationDelayed {
+            0% {
+                stroke-dashoffset: 0;
+                stroke-dasharray: 157 157;
+                stroke: blue;
+            }
+
+            25% {
+                stroke-dashoffset: 157;
+                stroke-dasharray: 157 157;
+                stroke: yellow;
+            }
+
+            50% {
+                stroke-dashoffset: 157;
+                stroke-dasharray: 0 314;
+                stroke: red;
+            }
+
+            75% {
+                stroke-dashoffset: 157;
+                stroke-dasharray: 0 314;
+                stroke: green;
+            }
+
+            100% {
+                stroke-dashoffset: 314;
+                stroke-dasharray: 157 157;
+                stroke: blue;
+            }
+        }
+    </style>
+    <script>
+        let circle = document.getElementById("circle")
+        let svg = document.getElementsByClassName("svg__physics")[0]
+        class Circle {
+            constructor(x, y, radius, circle, svg) {
+                this.position = {
+                    x,
+                    y
+                }
+                this.oldPosition = {
+                    x,
+                    y
+                }
+                this.svg = svg
+                this.radius = radius
+                this.circle = circle
+                this.width = svg.width.baseVal.value
+                this.height = svg.height.baseVal.value
+                this.gravity = .15
+                this.loss = .01
+                this.velocity = {
+                    x: 3,
+                    y: 0
+                }
+                this.mousePosition = {
+                    x: 0,
+                    y: 0
+                }
+                this.mouseDown = false
+                this.mouseDrag()
+            }
+            render() {
+                this.circle.setAttribute("cx", this.position.x);
+                this.circle.setAttribute("cy", this.position.y);
+            }
+
+            renderStyles() {
+                this.svg.style.filter =
+                    `drop-shadow(${this.position.x-this.oldPosition.x}px ${this.position.y-this.oldPosition.y}px 5px #222)`
+                //console.log(this.position.x - this.oldPosition.x)
+            }
+            update() {
+                this.oldPosition = this.position
+                let collision = false
+                let gravity = this.gravity
+                if (this.collisoionY()) {
+                    this.velocity.y = -this.velocity.y;
+                    collision = true
+                }
+                if (this.collisoionX()) {
+                    this.velocity.x = -this.velocity.x;
+                    collision = true
+                }
+
+                if (!this.mouseDown) {
+                    if (collision)
+                        gravity = 0
+                    this.velocity.y += gravity
+
+                }
+                this.position.y += this.velocity.y
+                this.position.x += this.velocity.x
+
+                if (this.velocity.x > 0) {
+                    this.velocity.x += -this.loss;
+                }
+                if (this.velocity.x < 0) {
+                    this.velocity.x += this.loss;
+                }
+                if (!collision) {
+
+
+                    if (this.velocity.y > 0) {
+                        this.velocity.y += -this.loss;
+                    }
+                    if (this.velocity.y < 0) {
+                        this.velocity.y += this.loss;
+                    }
+                }
+
+
+                if (this.mouseDown) {
+                    this.mouseUpdate()
+                }
+            }
+            collisoionX() {
+                if (this.position.x + this.radius >= this.width || this.position.x - this.radius <= 0) return true;
+
+                return false
+            }
+            collisoionY() {
+                if (this.position.y + this.radius >= this.height || this.position.y - this.radius <= 0) return true
+
+                return false
+            }
+            mouseDrag() {
+                this.circle.addEventListener("mousedown", e => {
+                    this.mouseDown = true
+                    this.mousePosition.x = e.clientX
+                    this.mousePosition.y = e.clientY
+                    this.loss = .05
+                })
+
+                this.svg.addEventListener("mousemove", e => {
+                    if (!this.mouseDown) return
+                    this.mouseDown = true
+                    this.mousePosition.x = e.clientX
+                    this.mousePosition.y = e.clientY
+                })
+                this.svg.addEventListener("mouseup", e => {
+                    this.mouseDown = false
+                    this.loss = .01
+                })
+            }
+            mouseUpdate() {
+                this.velocity.x += (this.mousePosition.x - this.position.x - this.radius / 2) / 500
+                this.velocity.y += (this.mousePosition.y - this.position.y - this.radius * 3) / 300
+            }
+        }
+
+        function update() {
+            circleObject.update()
+            circleObject.renderStyles()
+            circleObject.render()
+            requestAnimationFrame(update)
+        }
+        let circleObject = new Circle(200, 200, 50, circle, svg)
+        window.requestAnimationFrame(update)
+    </script>
+</body>
+
+</html>
